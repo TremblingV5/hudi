@@ -21,6 +21,10 @@
 #
 # Set SKIP_LANCE=1 to skip lance combos (e.g. if LANCE_BUNDLE_JAR isn't set).
 
+# NOTE: read_blob() only supports CONTENT mode. DESCRIPTOR mode is NOT allowed
+# and will fail at query time. All inline blob examples now use CONTENT mode.
+# See https://github.com/apache/hudi/issues/18822 for details.
+
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -47,15 +51,17 @@ run() {
   env "$@"
 }
 
-# blob reader: format x {out_of_line, inline+content, inline+descriptor}
+# blob reader: format x {out_of_line, inline+content}
+# NOTE: DESCRIPTOR mode is NOT supported by read_blob(). Only CONTENT mode works.
+# See Issue #18822: https://github.com/apache/hudi/issues/18822
 run "blob reader / parquet / out_of_line"          HUDI_BASE_FILE_FORMAT=parquet HUDI_BLOB_MODE=out_of_line                                python hudi_blob_reader_demo.py
 run "blob reader / parquet / inline + content"     HUDI_BASE_FILE_FORMAT=parquet HUDI_BLOB_MODE=inline      HUDI_INLINE_READ_MODE=content    python hudi_blob_reader_demo.py
-run "blob reader / parquet / inline + descriptor"  HUDI_BASE_FILE_FORMAT=parquet HUDI_BLOB_MODE=inline      HUDI_INLINE_READ_MODE=descriptor python hudi_blob_reader_demo.py
+# DESCRIPTOR mode removed - read_blob() only supports CONTENT mode (Issue #18822)
 
 if [[ "${SKIP_LANCE:-0}" != "1" ]]; then
   run "blob reader / lance / out_of_line"          HUDI_BASE_FILE_FORMAT=lance   HUDI_BLOB_MODE=out_of_line                                python hudi_blob_reader_demo.py
   run "blob reader / lance / inline + content"     HUDI_BASE_FILE_FORMAT=lance   HUDI_BLOB_MODE=inline      HUDI_INLINE_READ_MODE=content    python hudi_blob_reader_demo.py
-  run "blob reader / lance / inline + descriptor"  HUDI_BASE_FILE_FORMAT=lance   HUDI_BLOB_MODE=inline      HUDI_INLINE_READ_MODE=descriptor python hudi_blob_reader_demo.py
+  # DESCRIPTOR mode removed - read_blob() only supports CONTENT mode (Issue #18822)
 fi
 
 # sql demo: format only
